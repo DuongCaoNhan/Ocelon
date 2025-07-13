@@ -1,0 +1,592 @@
+openapi: 3.0.3
+info:
+  title: HR Service API
+  description: Human Resources Management Service for ERP System
+  version: 1.0.0
+  contact:
+    name: ERP Development Team
+    email: dev@erp-system.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.erp-system.com/v1/hr
+    description: Production server
+  - url: https://staging-api.erp-system.com/v1/hr
+    description: Staging server
+  - url: http://localhost:5001/api/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Employees
+    description: Employee management operations
+  - name: Payroll
+    description: Payroll management operations
+  - name: Leave
+    description: Leave management operations
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /employees:
+    get:
+      tags:
+        - Employees
+      summary: Get all employees
+      description: Retrieve a list of all employees with optional filtering
+      parameters:
+        - name: department
+          in: query
+          description: Filter by department
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by employee status
+          required: false
+          schema:
+            type: string
+            enum: [Active, Inactive, Terminated, OnLeave]
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Employees
+      summary: Create a new employee
+      description: Create a new employee record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployeeRequest'
+      responses:
+        '201':
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Employee with email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /employees/{id}:
+    get:
+      tags:
+        - Employees
+      summary: Get employee by ID
+      description: Retrieve a specific employee by their ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Employee ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Employees
+      summary: Update employee
+      description: Update an existing employee record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Employee ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
+      responses:
+        '200':
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Employees
+      summary: Delete employee
+      description: Soft delete an employee record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Employee ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Employee deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /employees/by-email/{email}:
+    get:
+      tags:
+        - Employees
+      summary: Get employee by email
+      description: Retrieve a specific employee by their email address
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: Employee email address
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /employees/by-department/{department}:
+    get:
+      tags:
+        - Employees
+      summary: Get employees by department
+      description: Retrieve all employees in a specific department
+      parameters:
+        - name: department
+          in: path
+          required: true
+          description: Department name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check the health status of the HR service
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the employee
+        firstName:
+          type: string
+          maxLength: 100
+          description: Employee's first name
+        lastName:
+          type: string
+          maxLength: 100
+          description: Employee's last name
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Employee's email address
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: Employee's phone number
+        dateOfBirth:
+          type: string
+          format: date
+          description: Employee's date of birth
+        hireDate:
+          type: string
+          format: date
+          description: Employee's hire date
+        department:
+          type: string
+          maxLength: 100
+          description: Employee's department
+        position:
+          type: string
+          maxLength: 100
+          description: Employee's job position
+        salary:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Employee's salary
+        employeeNumber:
+          type: string
+          maxLength: 20
+          description: Unique employee number
+        status:
+          type: string
+          enum: [Active, Inactive, Terminated, OnLeave]
+          description: Employee's current status
+        address:
+          $ref: '#/components/schemas/Address'
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Record last update timestamp
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          maxLength: 200
+          description: Street address
+        city:
+          type: string
+          maxLength: 100
+          description: City
+        state:
+          type: string
+          maxLength: 100
+          description: State or province
+        postalCode:
+          type: string
+          maxLength: 20
+          description: Postal or ZIP code
+        country:
+          type: string
+          maxLength: 100
+          description: Country
+
+    EmergencyContact:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Emergency contact name
+        relationship:
+          type: string
+          maxLength: 50
+          description: Relationship to employee
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: Emergency contact phone number
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Emergency contact email
+
+    CreateEmployeeRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - dateOfBirth
+        - hireDate
+        - department
+        - position
+        - salary
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          description: Employee's first name
+        lastName:
+          type: string
+          maxLength: 100
+          description: Employee's last name
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Employee's email address
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: Employee's phone number
+        dateOfBirth:
+          type: string
+          format: date
+          description: Employee's date of birth
+        hireDate:
+          type: string
+          format: date
+          description: Employee's hire date
+        department:
+          type: string
+          maxLength: 100
+          description: Employee's department
+        position:
+          type: string
+          maxLength: 100
+          description: Employee's job position
+        salary:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Employee's salary
+        address:
+          $ref: '#/components/schemas/Address'
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          description: Employee's first name
+        lastName:
+          type: string
+          maxLength: 100
+          description: Employee's last name
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Employee's email address
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: Employee's phone number
+        department:
+          type: string
+          maxLength: 100
+          description: Employee's department
+        position:
+          type: string
+          maxLength: 100
+          description: Employee's job position
+        salary:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Employee's salary
+        status:
+          type: string
+          enum: [Active, Inactive, Terminated, OnLeave]
+          description: Employee's current status
+        address:
+          $ref: '#/components/schemas/Address'
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: Current page number
+        pageSize:
+          type: integer
+          minimum: 1
+          description: Number of items per page
+        totalItems:
+          type: integer
+          minimum: 0
+          description: Total number of items
+        totalPages:
+          type: integer
+          minimum: 0
+          description: Total number of pages
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Healthy, Degraded, Unhealthy]
+          description: Overall health status
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [Healthy, Degraded, Unhealthy]
+              description:
+                type: string
+              data:
+                type: object
+        totalDuration:
+          type: string
+          description: Total time taken for health checks
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            details:
+              type: array
+              items:
+                type: string
+              description: Additional error details
+            traceId:
+              type: string
+              description: Request trace ID for debugging
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
