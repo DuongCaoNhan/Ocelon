@@ -1,0 +1,88 @@
+{
+  "environment": "development",
+  "services": {
+    "hrService": {
+      "url": "http://localhost:5001",
+      "healthCheck": "/health",
+      "database": {
+        "connectionString": "Server=(localdb)\\mssqllocaldb;Database=HRServiceDb_Dev;Trusted_Connection=true;MultipleActiveResultSets=true;",
+        "provider": "SqlServer"
+      }
+    },
+    "inventoryService": {
+      "url": "http://localhost:5002",
+      "healthCheck": "/health",
+      "database": {
+        "connectionString": "Server=(localdb)\\mssqllocaldb;Database=InventoryServiceDb_Dev;Trusted_Connection=true;MultipleActiveResultSets=true;",
+        "provider": "SqlServer"
+      }
+    },
+    "accountingService": {
+      "url": "http://localhost:5003",
+      "healthCheck": "/health",
+      "database": {
+        "connectionString": "Server=(localdb)\\mssqllocaldb;Database=AccountingServiceDb_Dev;Trusted_Connection=true;MultipleActiveResultSets=true;",
+        "provider": "SqlServer"
+      }
+    },
+    "workflowService": {
+      "url": "http://localhost:8082",
+      "healthCheck": "/actuator/health",
+      "database": {
+        "connectionString": "jdbc:sqlserver://localhost:1433;databaseName=WorkflowServiceDb_Dev",
+        "provider": "SqlServer"
+      }
+    },
+    "notificationService": {
+      "url": "http://localhost:3000",
+      "healthCheck": "/health",
+      "database": {
+        "connectionString": "mongodb://localhost:27017/notification_service_dev",
+        "provider": "MongoDB"
+      }
+    }
+  },
+  "azure": {
+    "serviceBus": {
+      "connectionString": "Endpoint=sb://erp-dev-servicebus.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=your-key",
+      "topicName": "erp-events"
+    },
+    "keyVault": {
+      "vaultUrl": "https://erp-dev-keyvault.vault.azure.net/"
+    },
+    "applicationInsights": {
+      "connectionString": "InstrumentationKey=your-dev-instrumentation-key"
+    },
+    "apiManagement": {
+      "gatewayUrl": "https://erp-dev-apim.azure-api.net",
+      "subscriptionKey": "your-dev-subscription-key"
+    }
+  },
+  "authentication": {
+    "jwt": {
+      "issuer": "https://erp-dev-auth.azure.com",
+      "audience": "erp-system-dev",
+      "validationKeys": [
+        {
+          "kid": "dev-key-1",
+          "use": "sig",
+          "alg": "RS256"
+        }
+      ]
+    }
+  },
+  "logging": {
+    "level": "Debug",
+    "enableConsole": true,
+    "enableApplicationInsights": false,
+    "enableFileLogging": true,
+    "logDirectory": "./logs"
+  },
+  "features": {
+    "enableSwagger": true,
+    "enableHealthChecks": true,
+    "enableMetrics": true,
+    "enableCors": true,
+    "enableRateLimiting": false
+  }
+}
