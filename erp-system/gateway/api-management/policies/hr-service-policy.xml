@@ -1,0 +1,202 @@
+<!--
+    HR Service Specific Policy
+    Additional throttling and security for HR operations
+-->
+<policies>
+    <inbound>
+        <!-- HR Service specific rate limiting -->
+        <rate-limit-by-key calls="100" renewal-period="60" counter-key="@(context.Request.IpAddress)" />
+        
+        <!-- User-based rate limiting for sensitive HR operations -->
+        <choose>
+            <when condition="@(context.Request.Method == "POST" || context.Request.Method == "PUT" || context.Request.Method == "DELETE")">
+                <rate-limit-by-key calls="20" renewal-period="60" counter-key="@(context.User?.Id ?? context.Request.IpAddress)" />
+            </when>
+        </choose>
+        
+        <!-- Enhanced security for employee data access -->
+        <choose>
+            <when condition="@(context.Request.Url.Path.Contains("/employees"))">
+                <!-- Validate role-based access -->
+                <validate-jwt header-name="Authorization" failed-validation-httpcode="403" failed-validation-error-message="Insufficient permissions for HR operations">
+                    <openid-config url="https://login.microsoftonline.com/{{tenant-id}}/v2.0/.well-known/openid_configuration" />
+                    <required-claims>
+                        <claim name="roles" match="any">
+                            <value>HR.Manager</value>
+                            <value>HR.Employee</value>
+                            <value>Admin</value>
+                        </claim>
+                    </required-claims>
+                </validate-jwt>
+                
+                <!-- Additional validation for sensitive operations -->
+                <choose>
+                    <when condition="@(context.Request.Method == "DELETE")">
+                        <validate-jwt header-name="Authorization" failed-validation-httpcode="403" failed-validation-error-message="Insufficient permissions for employee deletion">
+                            <openid-config url="https://login.microsoftonline.com/{{tenant-id}}/v2.0/.well-known/openid_configuration" />
+                            <required-claims>
+                                <claim name="roles" match="any">
+                                    <value>HR.Manager</value>
+                                    <value>Admin</value>
+                                </claim>
+                            </required-claims>
+                        </validate-jwt>
+                    </when>
+                </choose>
+            </when>
+        </choose>
+        
+        <!-- Input validation for employee creation/updates -->
+        <choose>
+            <when condition="@(context.Request.Method == "POST" && context.Request.Url.Path.EndsWith("/employees"))">
+                <!-- Validate required fields in request body -->
+                <set-variable name="requestBody" value="@(context.Request.Body.As<JObject>(preserveContent: true))" />
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        return body == null || 
+                               string.IsNullOrEmpty((string)body["firstName"]) ||
+                               string.IsNullOrEmpty((string)body["lastName"]) ||
+                               string.IsNullOrEmpty((string)body["email"]);
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "First name, last name, and email are required fields"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+                
+                <!-- Email format validation -->
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        var email = (string)body["email"];
+                        return !string.IsNullOrEmpty(email) && !System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "Invalid email format"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+            </when>
+        </choose>
+        
+        <!-- Response caching for read operations -->
+        <choose>
+            <when condition="@(context.Request.Method == "GET")">
+                <cache-lookup vary-by-developer="false" vary-by-developer-groups="false" downstream-caching-type="none">
+                    <vary-by-header>Authorization</vary-by-header>
+                    <vary-by-query-parameter>department</vary-by-query-parameter>
+                    <vary-by-query-parameter>status</vary-by-query-parameter>
+                </cache-lookup>
+            </when>
+        </choose>
+        
+        <!-- Data masking headers for PII protection -->
+        <set-header name="X-PII-Protection" exists-action="override">
+            <value>enabled</value>
+        </set-header>
+    </inbound>
+    
+    <backend>
+        <!-- Backend routing based on environment -->
+        <choose>
+            <when condition="@(context.Variables.GetValueOrDefault<string>("environment") == "dev")">
+                <set-backend-service base-url="http://hr-service-dev.default.svc.cluster.local:80" />
+            </when>
+            <when condition="@(context.Variables.GetValueOrDefault<string>("environment") == "staging")">
+                <set-backend-service base-url="http://hr-service-staging.default.svc.cluster.local:80" />
+            </when>
+            <otherwise>
+                <set-backend-service base-url="http://hr-service.default.svc.cluster.local:80" />
+            </otherwise>
+        </choose>
+        
+        <!-- Circuit breaker pattern -->
+        <forward-request timeout="30" />
+    </backend>
+    
+    <outbound>
+        <!-- Cache successful GET responses -->
+        <choose>
+            <when condition="@(context.Request.Method == "GET" && context.Response.StatusCode == 200)">
+                <cache-store duration="300" />
+            </when>
+        </choose>
+        
+        <!-- Data masking for sensitive fields in response -->
+        <choose>
+            <when condition="@(context.Response.StatusCode == 200 && context.Request.Method == "GET")">
+                <set-body>@{
+                    var body = context.Response.Body.As<JToken>(preserveContent: true);
+                    
+                    // Mask salary information based on user role
+                    var userRoles = context.User?.Claims?.Where(c => c.Type == "roles")?.Select(c => c.Value) ?? new string[0];
+                    var canViewSalary = userRoles.Contains("HR.Manager") || userRoles.Contains("Admin");
+                    
+                    if (!canViewSalary && body != null)
+                    {
+                        if (body is JArray)
+                        {
+                            foreach (var item in body)
+                            {
+                                if (item["salary"] != null)
+                                    item["salary"] = "***MASKED***";
+                            }
+                        }
+                        else if (body is JObject && body["salary"] != null)
+                        {
+                            body["salary"] = "***MASKED***";
+                        }
+                    }
+                    
+                    return body?.ToString();
+                }</set-body>
+            </when>
+        </choose>
+        
+        <!-- Add HR service specific headers -->
+        <set-header name="X-Service" exists-action="override">
+            <value>HR-Service</value>
+        </set-header>
+        
+        <set-header name="X-Data-Classification" exists-action="override">
+            <value>PII-Sensitive</value>
+        </set-header>
+    </outbound>
+    
+    <on-error>
+        <!-- HR service specific error handling -->
+        <choose>
+            <when condition="@(context.LastError?.Source == "validate-jwt")">
+                <set-body>@{
+                    return new JObject(
+                        new JProperty("error", "Authentication Required"),
+                        new JProperty("details", "Valid HR system credentials are required to access employee data"),
+                        new JProperty("traceId", context.RequestId)
+                    ).ToString();
+                }</set-body>
+                <set-status code="401" reason="Unauthorized" />
+            </when>
+        </choose>
+    </on-error>
+</policies>

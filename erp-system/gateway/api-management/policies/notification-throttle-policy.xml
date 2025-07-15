@@ -1,0 +1,248 @@
+<!--
+    Notification Service Specific Policy
+    Real-time communication and high-frequency notification handling
+-->
+<policies>
+    <inbound>
+        <!-- High-frequency rate limiting for notification service -->
+        <rate-limit-by-key calls="500" renewal-period="60" counter-key="@(context.Request.IpAddress)" />
+        
+        <!-- User-based rate limiting for notification sending -->
+        <choose>
+            <when condition="@(context.Request.Url.Path.Contains("/notifications") && context.Request.Method == "POST")">
+                <rate-limit-by-key calls="50" renewal-period="60" counter-key="@(context.User?.Id ?? context.Request.IpAddress)" />
+            </when>
+            <!-- Special limits for broadcast notifications -->
+            <when condition="@(context.Request.Url.Path.Contains("/notifications/broadcast"))">
+                <rate-limit-by-key calls="5" renewal-period="300" counter-key="@(context.User?.Id ?? context.Request.IpAddress)" />
+            </when>
+        </choose>
+        
+        <!-- Enhanced security for notification operations -->
+        <choose>
+            <when condition="@(context.Request.Url.Path.Contains("/notifications/broadcast") || context.Request.Url.Path.Contains("/realtime"))">
+                <!-- Validate admin or service role for broadcast operations -->
+                <validate-jwt header-name="Authorization" failed-validation-httpcode="403" failed-validation-error-message="Insufficient permissions for broadcast operations">
+                    <openid-config url="https://login.microsoftonline.com/{{tenant-id}}/v2.0/.well-known/openid_configuration" />
+                    <required-claims>
+                        <claim name="roles" match="any">
+                            <value>Admin</value>
+                            <value>Notification.Manager</value>
+                            <value>Service.Account</value>
+                        </claim>
+                    </required-claims>
+                </validate-jwt>
+            </when>
+        </choose>
+        
+        <!-- Input validation for notification requests -->
+        <choose>
+            <when condition="@(context.Request.Method == "POST" && (context.Request.Url.Path.EndsWith("/notifications") || context.Request.Url.Path.Contains("/notifications/broadcast")))">
+                <set-variable name="requestBody" value="@(context.Request.Body.As<JObject>(preserveContent: true))" />
+                
+                <!-- Validate required fields -->
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        return body == null || 
+                               string.IsNullOrEmpty((string)body["type"]) ||
+                               body["recipients"] == null ||
+                               string.IsNullOrEmpty((string)body["message"]);
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "Type, recipients, and message are required fields"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+                
+                <!-- Validate notification type -->
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        var type = (string)body["type"];
+                        return !string.IsNullOrEmpty(type) && !new[] {"Email", "SMS", "Push", "InApp"}.Contains(type);
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "Notification type must be one of: Email, SMS, Push, InApp"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+                
+                <!-- Validate recipients count for non-broadcast notifications -->
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        var recipients = body["recipients"] as JArray;
+                        return !context.Request.Url.Path.Contains("/broadcast") && 
+                               (recipients == null || recipients.Count == 0 || recipients.Count > 100);
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "Recipients array must contain 1-100 items for regular notifications"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+                
+                <!-- Message length validation -->
+                <choose>
+                    <when condition="@{
+                        var body = (JObject)context.Variables["requestBody"];
+                        var message = (string)body["message"];
+                        return !string.IsNullOrEmpty(message) && message.Length > 5000;
+                    }">
+                        <return-response>
+                            <set-status code="400" reason="Bad Request" />
+                            <set-header name="Content-Type" exists-action="override">
+                                <value>application/json</value>
+                            </set-header>
+                            <set-body>@{
+                                return new JObject(
+                                    new JProperty("error", "Validation Error"),
+                                    new JProperty("details", "Message content cannot exceed 5000 characters"),
+                                    new JProperty("traceId", context.RequestId)
+                                ).ToString();
+                            }</set-body>
+                        </return-response>
+                    </when>
+                </choose>
+            </when>
+        </choose>
+        
+        <!-- WebSocket upgrade handling for real-time connections -->
+        <choose>
+            <when condition="@(context.Request.Headers.GetValueOrDefault("Upgrade", "") == "websocket")">
+                <!-- Allow WebSocket upgrades to pass through -->
+                <set-header name="X-WebSocket-Request" exists-action="override">
+                    <value>true</value>
+                </set-header>
+            </when>
+        </choose>
+        
+        <!-- No caching for notification service (real-time nature) -->
+        <set-header name="Cache-Control" exists-action="override">
+            <value>no-cache, no-store, must-revalidate</value>
+        </set-header>
+        
+        <!-- Priority handling -->
+        <choose>
+            <when condition="@{
+                var body = context.Request.Body.As<JObject>(preserveContent: true);
+                return body != null && (string)body["priority"] == "Critical";
+            }">
+                <set-header name="X-Priority" exists-action="override">
+                    <value>Critical</value>
+                </set-header>
+            </when>
+        </choose>
+    </inbound>
+    
+    <backend>
+        <!-- Backend routing based on environment -->
+        <choose>
+            <when condition="@(context.Variables.GetValueOrDefault<string>("environment") == "dev")">
+                <set-backend-service base-url="http://notification-service-dev.default.svc.cluster.local:3000" />
+            </when>
+            <when condition="@(context.Variables.GetValueOrDefault<string>("environment") == "staging")">
+                <set-backend-service base-url="http://notification-service-staging.default.svc.cluster.local:3000" />
+            </when>
+            <otherwise>
+                <set-backend-service base-url="http://notification-service.default.svc.cluster.local:3000" />
+            </otherwise>
+        </choose>
+        
+        <!-- Increased timeout for notification processing -->
+        <forward-request timeout="60" />
+    </backend>
+    
+    <outbound>
+        <!-- Add notification service specific headers -->
+        <set-header name="X-Service" exists-action="override">
+            <value>Notification-Service</value>
+        </set-header>
+        
+        <!-- Real-time processing indicator -->
+        <set-header name="X-Processing-Type" exists-action="override">
+            <value>Real-Time</value>
+        </set-header>
+        
+        <!-- Handle async responses for broadcast notifications -->
+        <choose>
+            <when condition="@(context.Request.Url.Path.Contains("/broadcast") && context.Response.StatusCode == 202)">
+                <set-header name="X-Async-Processing" exists-action="override">
+                    <value>true</value>
+                </set-header>
+            </when>
+        </choose>
+        
+        <!-- WebSocket response handling -->
+        <choose>
+            <when condition="@(context.Request.Headers.GetValueOrDefault("X-WebSocket-Request", "") == "true")">
+                <set-header name="X-WebSocket-Enabled" exists-action="override">
+                    <value>true</value>
+                </set-header>
+            </when>
+        </choose>
+        
+        <!-- No caching for dynamic content -->
+        <set-header name="Cache-Control" exists-action="override">
+            <value>no-cache, no-store, must-revalidate</value>
+        </set-header>
+        
+        <set-header name="Pragma" exists-action="override">
+            <value>no-cache</value>
+        </set-header>
+        
+        <set-header name="Expires" exists-action="override">
+            <value>0</value>
+        </set-header>
+    </outbound>
+    
+    <on-error>
+        <!-- Notification service specific error handling -->
+        <choose>
+            <when condition="@(context.LastError?.Message?.Contains("timeout") == true)">
+                <set-body>@{
+                    return new JObject(
+                        new JProperty("error", "Processing Timeout"),
+                        new JProperty("details", "Notification processing took too long. Your request may still be processed."),
+                        new JProperty("traceId", context.RequestId),
+                        new JProperty("retryAfter", "30 seconds")
+                    ).ToString();
+                }</set-body>
+                <set-status code="503" reason="Service Temporarily Unavailable" />
+                <set-header name="Retry-After" exists-action="override">
+                    <value>30</value>
+                </set-header>
+            </when>
+        </choose>
+    </on-error>
+</policies>

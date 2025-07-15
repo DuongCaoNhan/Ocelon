@@ -1,0 +1,559 @@
+openapi: 3.0.3
+info:
+  title: Workflow Service API Gateway
+  description: Business Process and Workflow Management Service for ERP System (Gateway Version)
+  version: 1.0.0
+  contact:
+    name: ERP Development Team
+    email: dev@erp-system.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.erp-system.com/v1/workflow
+    description: Production server (via API Gateway)
+  - url: https://staging-api.erp-system.com/v1/workflow
+    description: Staging server (via API Gateway)
+  - url: https://dev-api.erp-system.com/v1/workflow
+    description: Development server (via API Gateway)
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Azure AD or identity provider
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key for service-to-service communication
+
+  schemas:
+    ProcessDefinitionDto:
+      type: object
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+        deploymentId:
+          type: string
+        resourceName:
+          type: string
+        isActive:
+          type: boolean
+        deploymentTime:
+          type: string
+          format: date-time
+
+    ProcessInstanceDto:
+      type: object
+      properties:
+        id:
+          type: string
+        processDefinitionId:
+          type: string
+        processDefinitionKey:
+          type: string
+        businessKey:
+          type: string
+        startUserId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+        isEnded:
+          type: boolean
+        isSuspended:
+          type: boolean
+        variables:
+          type: object
+          additionalProperties: true
+
+    TaskDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        processInstanceId:
+          type: string
+        processDefinitionId:
+          type: string
+        assignee:
+          type: string
+        candidateUsers:
+          type: array
+          items:
+            type: string
+        candidateGroups:
+          type: array
+          items:
+            type: string
+        createTime:
+          type: string
+          format: date-time
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          type: integer
+        formKey:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    StartProcessDto:
+      type: object
+      required:
+        - processDefinitionKey
+      properties:
+        processDefinitionKey:
+          type: string
+        businessKey:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    CompleteTaskDto:
+      type: object
+      properties:
+        variables:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+        traceId:
+          type: string
+
+tags:
+  - name: Process Definitions
+    description: Process definition management
+  - name: Process Instances
+    description: Process instance management
+  - name: Tasks
+    description: Task management
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /process-definitions:
+    get:
+      tags:
+        - Process Definitions
+      summary: Get all process definitions
+      description: Retrieve all deployed process definitions
+      parameters:
+        - name: key
+          in: query
+          description: Filter by process definition key
+          required: false
+          schema:
+            type: string
+        - name: latest
+          in: query
+          description: Only return latest versions
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessDefinitionDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Process Definitions
+      summary: Deploy new process definition
+      description: Deploy a new BPMN process definition
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: BPMN file to deploy
+                deploymentName:
+                  type: string
+                  description: Name for the deployment
+      responses:
+        '201':
+          description: Process definition deployed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDefinitionDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /process-definitions/{id}:
+    get:
+      tags:
+        - Process Definitions
+      summary: Get process definition details
+      description: Retrieve details of a specific process definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process definition ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDefinitionDto'
+        '404':
+          description: Process definition not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /process-instances:
+    get:
+      tags:
+        - Process Instances
+      summary: Get process instances
+      description: Retrieve process instances with optional filtering
+      parameters:
+        - name: processDefinitionKey
+          in: query
+          description: Filter by process definition key
+          required: false
+          schema:
+            type: string
+        - name: businessKey
+          in: query
+          description: Filter by business key
+          required: false
+          schema:
+            type: string
+        - name: startUserId
+          in: query
+          description: Filter by start user ID
+          required: false
+          schema:
+            type: string
+        - name: active
+          in: query
+          description: Filter active/completed instances
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessInstanceDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Process Instances
+      summary: Start new process instance
+      description: Start a new process instance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartProcessDto'
+      responses:
+        '201':
+          description: Process instance started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstanceDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /process-instances/{id}:
+    get:
+      tags:
+        - Process Instances
+      summary: Get process instance details
+      description: Retrieve details of a specific process instance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process instance ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstanceDto'
+        '404':
+          description: Process instance not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    delete:
+      tags:
+        - Process Instances
+      summary: Cancel process instance
+      description: Cancel/terminate a running process instance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Process instance ID
+          schema:
+            type: string
+        - name: reason
+          in: query
+          description: Reason for cancellation
+          required: false
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Process instance cancelled successfully
+        '404':
+          description: Process instance not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: Get user tasks
+      description: Retrieve tasks assigned to the current user or available to claim
+      parameters:
+        - name: assignee
+          in: query
+          description: Filter by assignee
+          required: false
+          schema:
+            type: string
+        - name: candidateUser
+          in: query
+          description: Filter by candidate user
+          required: false
+          schema:
+            type: string
+        - name: candidateGroup
+          in: query
+          description: Filter by candidate group
+          required: false
+          schema:
+            type: string
+        - name: processInstanceId
+          in: query
+          description: Filter by process instance ID
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /tasks/{id}/complete:
+    post:
+      tags:
+        - Tasks
+      summary: Complete task
+      description: Complete a user task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTaskDto'
+      responses:
+        '204':
+          description: Task completed successfully
+        '404':
+          description: Task not found
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /tasks/{id}/claim:
+    post:
+      tags:
+        - Tasks
+      summary: Claim task
+      description: Claim a task for the current user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Task claimed successfully
+        '404':
+          description: Task not found
+        '400':
+          description: Bad request (task already claimed)
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /tasks/{id}/delegate:
+    post:
+      tags:
+        - Tasks
+      summary: Delegate task
+      description: Delegate a task to another user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  description: User ID to delegate the task to
+      responses:
+        '204':
+          description: Task delegated successfully
+        '404':
+          description: Task not found
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check the health status of the Workflow service
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+        '503':
+          description: Service is unhealthy

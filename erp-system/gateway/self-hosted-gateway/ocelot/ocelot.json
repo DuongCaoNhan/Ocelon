@@ -1,0 +1,390 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/hr/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "hr-service",
+      "Key": "hr-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 50
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway",
+        "X-Service-Name": "HR-Service"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "HR.Employee,HR.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/inventory/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "inventory-service",
+      "Key": "inventory-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway",
+        "X-Service-Name": "Inventory-Service"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Inventory.User,Inventory.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/accounting/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "accounting-service",
+      "Key": "accounting-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 75
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway",
+        "X-Service-Name": "Accounting-Service"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Accounting.User,Accounting.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/workflow/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "workflow-service",
+      "Key": "workflow-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway",
+        "X-Service-Name": "Workflow-Service"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Workflow.User,Workflow.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 3000
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "notification-service",
+      "Key": "notification-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 200
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway",
+        "X-Service-Name": "Notification-Service"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Notification.User,Notification.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 3000,
+        "TimeoutValue": 60000
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamPathTemplate": "/health/hr",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "hr-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamPathTemplate": "/health/inventory",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "inventory-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ],
+      "UpstreamPathTemplate": "/health/accounting",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "accounting-health"
+    },
+    {
+      "DownstreamPathTemplate": "/actuator/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/health/workflow",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "workflow-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 3000
+        }
+      ],
+      "UpstreamPathTemplate": "/health/notifications",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "notification-health"
+    }
+  ],
+  "Aggregates": [
+    {
+      "RouteKeys": [
+        "hr-health",
+        "inventory-health", 
+        "accounting-health",
+        "workflow-health",
+        "notification-health"
+      ],
+      "UpstreamPathTemplate": "/health/all",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Aggregator": "HealthCheckAggregator"
+    }
+  ],
+  "SwaggerEndPoints": [
+    {
+      "Key": "hr-service",
+      "Config": [
+        {
+          "Name": "HR Service API",
+          "Version": "v1",
+          "Url": "http://localhost:5001/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "inventory-service",
+      "Config": [
+        {
+          "Name": "Inventory Service API",
+          "Version": "v1",
+          "Url": "http://localhost:5002/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "accounting-service",
+      "Config": [
+        {
+          "Name": "Accounting Service API",
+          "Version": "v1",
+          "Url": "http://localhost:5003/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "workflow-service",
+      "Config": [
+        {
+          "Name": "Workflow Service API",
+          "Version": "v1",
+          "Url": "http://localhost:8080/v3/api-docs"
+        }
+      ]
+    },
+    {
+      "Key": "notification-service",
+      "Config": [
+        {
+          "Name": "Notification Service API",
+          "Version": "v1",
+          "Url": "http://localhost:3000/api-docs"
+        }
+      ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5000",
+    "RateLimitOptions": {
+      "QuotaExceededMessage": "API rate limit exceeded. Please try again later.",
+      "HttpStatusCode": 429,
+      "ClientIdHeader": "X-Client-Id"
+    },
+    "QoSOptions": {
+      "ExceptionsAllowedBeforeBreaking": 3,
+      "DurationOfBreak": 5000,
+      "TimeoutValue": 30000
+    },
+    "LoadBalancerOptions": {
+      "Type": "RoundRobin",
+      "Key": "RemoteAddress",
+      "Expiry": 3600000
+    },
+    "HttpHandlerOptions": {
+      "AllowAutoRedirect": false,
+      "UseCookieContainer": false,
+      "UseTracing": true,
+      "UseProxy": false
+    },
+    "ServiceDiscoveryProvider": {
+      "Type": "Consul",
+      "Host": "localhost",
+      "Port": 8500,
+      "ConfigurationKey": "ocelot"
+    }
+  }
+}
