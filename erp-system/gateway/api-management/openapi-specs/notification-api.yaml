@@ -1,0 +1,590 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API Gateway
+  description: Real-time Notification and Communication Service for ERP System (Gateway Version)
+  version: 1.0.0
+  contact:
+    name: ERP Development Team
+    email: dev@erp-system.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.erp-system.com/v1/notifications
+    description: Production server (via API Gateway)
+  - url: https://staging-api.erp-system.com/v1/notifications
+    description: Staging server (via API Gateway)
+  - url: https://dev-api.erp-system.com/v1/notifications
+    description: Development server (via API Gateway)
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Azure AD or identity provider
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key for service-to-service communication
+
+  schemas:
+    NotificationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [Email, SMS, Push, InApp]
+        subject:
+          type: string
+        message:
+          type: string
+        priority:
+          type: string
+          enum: [Low, Normal, High, Critical]
+        status:
+          type: string
+          enum: [Pending, Sent, Delivered, Failed]
+        recipients:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SendNotificationDto:
+      type: object
+      required:
+        - type
+        - recipients
+        - subject
+        - message
+      properties:
+        type:
+          type: string
+          enum: [Email, SMS, Push, InApp]
+        recipients:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        priority:
+          type: string
+          enum: [Low, Normal, High, Critical]
+          default: Normal
+        templateId:
+          type: string
+          description: Optional template ID for predefined message formats
+        templateData:
+          type: object
+          additionalProperties: true
+          description: Data to populate template variables
+        metadata:
+          type: object
+          additionalProperties: true
+
+    TemplateDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [Email, SMS, Push, InApp]
+        subject:
+          type: string
+        content:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    WebSocketConnectionDto:
+      type: object
+      properties:
+        connectionId:
+          type: string
+        userId:
+          type: string
+        connectedAt:
+          type: string
+          format: date-time
+        lastActivity:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+        traceId:
+          type: string
+
+tags:
+  - name: Notifications
+    description: Notification management
+  - name: Templates
+    description: Message template management
+  - name: Real-time
+    description: Real-time communication
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get notifications
+      description: Retrieve notifications with optional filtering
+      parameters:
+        - name: userId
+          in: query
+          description: Filter by user ID
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by notification type
+          required: false
+          schema:
+            type: string
+            enum: [Email, SMS, Push, InApp]
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            type: string
+            enum: [Pending, Sent, Delivered, Failed]
+        - name: fromDate
+          in: query
+          description: Filter from date
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: toDate
+          in: query
+          description: Filter to date
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          description: Page number (1-based)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Notifications
+      summary: Send notification
+      description: Send a new notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationDto'
+      responses:
+        '201':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification by ID
+      description: Retrieve a specific notification by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Notification ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDto'
+        '404':
+          description: Notification not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /notifications/{id}/resend:
+    post:
+      tags:
+        - Notifications
+      summary: Resend notification
+      description: Resend a failed notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Notification ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification resent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDto'
+        '404':
+          description: Notification not found
+        '400':
+          description: Bad request (notification cannot be resent)
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /notifications/broadcast:
+    post:
+      tags:
+        - Notifications
+      summary: Broadcast notification
+      description: Send a notification to multiple users or groups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SendNotificationDto'
+                - type: object
+                  properties:
+                    userGroups:
+                      type: array
+                      items:
+                        type: string
+                      description: User groups to send notification to
+                    allUsers:
+                      type: boolean
+                      description: Send to all users in the system
+                      default: false
+      responses:
+        '202':
+          description: Broadcast notification queued successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  broadcastId:
+                    type: string
+                  estimatedRecipients:
+                    type: integer
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /templates:
+    get:
+      tags:
+        - Templates
+      summary: Get notification templates
+      description: Retrieve notification templates
+      parameters:
+        - name: type
+          in: query
+          description: Filter by template type
+          required: false
+          schema:
+            type: string
+            enum: [Email, SMS, Push, InApp]
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Templates
+      summary: Create notification template
+      description: Create a new notification template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateDto'
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /templates/{id}:
+    get:
+      tags:
+        - Templates
+      summary: Get template by ID
+      description: Retrieve a specific template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDto'
+        '404':
+          description: Template not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    put:
+      tags:
+        - Templates
+      summary: Update template
+      description: Update an existing template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateDto'
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDto'
+        '400':
+          description: Bad request
+        '404':
+          description: Template not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /realtime/connections:
+    get:
+      tags:
+        - Real-time
+      summary: Get active connections
+      description: Get active WebSocket connections (admin only)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebSocketConnectionDto'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin only)
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /realtime/send:
+    post:
+      tags:
+        - Real-time
+      summary: Send real-time message
+      description: Send a real-time message to connected users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipients
+                - message
+              properties:
+                recipients:
+                  type: array
+                  items:
+                    type: string
+                  description: User IDs to send message to
+                message:
+                  type: object
+                  additionalProperties: true
+                  description: Message payload
+                event:
+                  type: string
+                  description: Event name
+                  default: message
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentCount:
+                    type: integer
+                    description: Number of recipients who received the message
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check the health status of the Notification service
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+        '503':
+          description: Service is unhealthy

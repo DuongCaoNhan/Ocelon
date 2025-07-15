@@ -49,15 +49,27 @@ ocelon/
 │   │   ├── AccountingService/            📁 Ready for Implementation
 │   │   ├── WorkflowService/              ⚙️ Java Spring Boot
 │   │   └── NotificationService/          ⚙️ Node.js Express
+│   ├── gateway/                         # API Gateway (Azure APIM, YARP, Ocelot, shared libs)
+│   │   ├── api-management/              # Azure API Management policies, OpenAPI, docs
+│   │   ├── self-hosted-gateway/         # YARP & Ocelot implementations
+│   │   ├── infrastructure/              # Gateway-specific IaC (Bicep, etc.)
+│   │   ├── src/                        # Shared libraries, gateway tests
+│   │   └── build/                      # Gateway build scripts
 │   ├── tests/
 │   │   ├── unit/                         ✅ xUnit + Jest
-│   │   └── integration/                  📋 Ready
+│   │   ├── integration/                  📋 Ready
+│   │   └── e2e/                          # End-to-end tests
 │   ├── infrastructure/
-│   │   ├── azure/                        ☁️ Bicep Templates
+│   │   ├── bicep/                        ☁️ Bicep Templates
 │   │   ├── kubernetes/                   🐳 K8s Manifests
 │   │   └── terraform/                    🏗️ IaC Scripts
+│   ├── config/                          # Environment-specific configs
+│   │   ├── dev/
+│   │   ├── staging/
+│   │   └── prod/
 │   ├── ci-cd/
 │   │   └── github-actions/               🔄 DevOps Pipelines
+│   ├── database/                        # Database management/scripts
 │   └── docs/                             📚 Documentation
 ├── ERP.sln                               ✅ Solution File
 └── README.md                             📖 This File

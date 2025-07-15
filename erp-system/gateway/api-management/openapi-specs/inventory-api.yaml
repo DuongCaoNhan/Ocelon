@@ -1,0 +1,484 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service API Gateway
+  description: Inventory and Stock Management Service for ERP System (Gateway Version)
+  version: 1.0.0
+  contact:
+    name: ERP Development Team
+    email: dev@erp-system.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.erp-system.com/v1/inventory
+    description: Production server (via API Gateway)
+  - url: https://staging-api.erp-system.com/v1/inventory
+    description: Staging server (via API Gateway)
+  - url: https://dev-api.erp-system.com/v1/inventory
+    description: Development server (via API Gateway)
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Azure AD or identity provider
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key for service-to-service communication
+
+  schemas:
+    ProductDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique product identifier
+        sku:
+          type: string
+          description: Product SKU
+        name:
+          type: string
+          description: Product name
+        description:
+          type: string
+          description: Product description
+        category:
+          type: string
+          description: Product category
+        unitPrice:
+          type: number
+          format: decimal
+          description: Unit price
+        unitOfMeasure:
+          type: string
+          description: Unit of measure (e.g., EA, KG, LB)
+        isActive:
+          type: boolean
+          description: Whether the product is active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductDto:
+      type: object
+      required:
+        - sku
+        - name
+        - category
+        - unitPrice
+        - unitOfMeasure
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 50
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        category:
+          type: string
+          minLength: 1
+          maxLength: 100
+        unitPrice:
+          type: number
+          format: decimal
+          minimum: 0
+        unitOfMeasure:
+          type: string
+          minLength: 1
+          maxLength: 10
+
+    StockLevelDto:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        quantityOnHand:
+          type: number
+          format: decimal
+        quantityReserved:
+          type: number
+          format: decimal
+        quantityAvailable:
+          type: number
+          format: decimal
+        reorderPoint:
+          type: number
+          format: decimal
+        lastUpdated:
+          type: string
+          format: date-time
+
+    StockMovementDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        movementType:
+          type: string
+          enum: [Receipt, Issue, Transfer, Adjustment]
+        quantity:
+          type: number
+          format: decimal
+        unitCost:
+          type: number
+          format: decimal
+        reference:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WarehouseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    AddressDto:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Detailed error information
+        traceId:
+          type: string
+          description: Request trace ID
+
+tags:
+  - name: Products
+    description: Product management operations
+  - name: Stock
+    description: Stock management operations
+  - name: Warehouses
+    description: Warehouse management operations
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Retrieve a list of all products with optional filtering
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number (1-based)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      description: Create a new product in the catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductDto'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Retrieve a specific product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '404':
+          description: Product not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /stock:
+    get:
+      tags:
+        - Stock
+      summary: Get stock levels
+      description: Retrieve stock levels across warehouses
+      parameters:
+        - name: warehouseId
+          in: query
+          description: Filter by warehouse ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: productId
+          in: query
+          description: Filter by product ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockLevelDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /stock/{productId}:
+    get:
+      tags:
+        - Stock
+      summary: Get stock for product
+      description: Retrieve stock levels for a specific product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockLevelDto'
+        '404':
+          description: Product not found
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /stock/movements:
+    post:
+      tags:
+        - Stock
+      summary: Record stock movement
+      description: Record a stock movement (receipt, issue, transfer, or adjustment)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockMovementDto'
+      responses:
+        '201':
+          description: Stock movement recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovementDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /warehouses:
+    get:
+      tags:
+        - Warehouses
+      summary: Get all warehouses
+      description: Retrieve a list of all warehouses
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WarehouseDto'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Warehouses
+      summary: Create new warehouse
+      description: Create a new warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseDto'
+      responses:
+        '201':
+          description: Warehouse created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseDto'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too Many Requests
+        '500':
+          description: Internal server error
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check the health status of the Inventory service
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+        '503':
+          description: Service is unhealthy
