@@ -1,0 +1,450 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-service-staging.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "hr-service-staging-backup.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/hr/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "hr-service",
+      "Key": "hr-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["hr.read", "hr.write"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Staging",
+        "X-Service-Name": "HR-Service",
+        "X-Environment": "Staging",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "HR.Employee,HR.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "hr-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 300,
+        "Region": "hr-cache-staging"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "inventory-service-staging.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "inventory-service-staging-backup.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/inventory/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "inventory-service",
+      "Key": "inventory-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["inventory.read", "inventory.write"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 150
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Staging",
+        "X-Service-Name": "Inventory-Service",
+        "X-Environment": "Staging",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Inventory.User,Inventory.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "inventory-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 300,
+        "Region": "inventory-cache-staging"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "accounting-service-staging.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "accounting-service-staging-backup.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/accounting/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "accounting-service",
+      "Key": "accounting-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["accounting.read", "accounting.write"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Staging",
+        "X-Service-Name": "Accounting-Service",
+        "X-Environment": "Staging",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Accounting.User,Accounting.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "accounting-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 300,
+        "Region": "accounting-cache-staging"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "workflow-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/workflow/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "workflow-service",
+      "Key": "workflow-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["workflow.read", "workflow.write"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 150
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Staging",
+        "X-Service-Name": "Workflow-Service",
+        "X-Environment": "Staging",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Workflow.User,Workflow.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "workflow-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 300,
+        "Region": "workflow-cache-staging"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "notification-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "notification-service",
+      "Key": "notification-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["notification.read", "notification.write"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 250
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Staging",
+        "X-Service-Name": "Notification-Service",
+        "X-Environment": "Staging",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Notification.User,Notification.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 3000,
+        "TimeoutValue": 45000,
+        "CircuitBreakerName": "notification-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 180,
+        "Region": "notification-cache-staging"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/hr",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "hr-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "inventory-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/inventory",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "inventory-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "accounting-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/accounting",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "accounting-health"
+    },
+    {
+      "DownstreamPathTemplate": "/actuator/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "workflow-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/workflow",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "workflow-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "notification-service-staging.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/notifications",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "notification-health"
+    }
+  ],
+  "Aggregates": [
+    {
+      "RouteKeys": [
+        "hr-health",
+        "inventory-health", 
+        "accounting-health",
+        "workflow-health",
+        "notification-health"
+      ],
+      "UpstreamPathTemplate": "/health/all",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Aggregator": "HealthCheckAggregator"
+    }
+  ],
+  "SwaggerEndPoints": [
+    {
+      "Key": "hr-service",
+      "Config": [
+        {
+          "Name": "HR Service API (Staging)",
+          "Version": "v1",
+          "Url": "https://hr-service-staging.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "inventory-service",
+      "Config": [
+        {
+          "Name": "Inventory Service API (Staging)",
+          "Version": "v1",
+          "Url": "https://inventory-service-staging.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "accounting-service",
+      "Config": [
+        {
+          "Name": "Accounting Service API (Staging)",
+          "Version": "v1",
+          "Url": "https://accounting-service-staging.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "workflow-service",
+      "Config": [
+        {
+          "Name": "Workflow Service API (Staging)",
+          "Version": "v1",
+          "Url": "https://workflow-service-staging.ocelon.com/v3/api-docs"
+        }
+      ]
+    },
+    {
+      "Key": "notification-service",
+      "Config": [
+        {
+          "Name": "Notification Service API (Staging)",
+          "Version": "v1",
+          "Url": "https://notification-service-staging.ocelon.com/api-docs"
+        }
+      ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://api-staging.ocelon.com",
+    "RateLimitOptions": {
+      "QuotaExceededMessage": "API rate limit exceeded for staging environment. Please try again later.",
+      "HttpStatusCode": 429,
+      "ClientIdHeader": "X-Client-Id",
+      "DisableRateLimitHeaders": false
+    },
+    "QoSOptions": {
+      "ExceptionsAllowedBeforeBreaking": 5,
+      "DurationOfBreak": 5000,
+      "TimeoutValue": 30000
+    },
+    "LoadBalancerOptions": {
+      "Type": "RoundRobin",
+      "Key": "RemoteAddress",
+      "Expiry": 3600000
+    },
+    "HttpHandlerOptions": {
+      "AllowAutoRedirect": false,
+      "UseCookieContainer": false,
+      "UseTracing": true,
+      "UseProxy": false
+    },
+    "ServiceDiscoveryProvider": {
+      "Type": "Consul",
+      "Host": "consul-staging.ocelon.com",
+      "Port": 8500,
+      "ConfigurationKey": "ocelot-staging"
+    },
+    "DownstreamHeaderTransform": {
+      "X-Environment": "Staging",
+      "X-Gateway-Version": "1.0.0-staging",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "X-XSS-Protection": "1; mode=block"
+    }
+  }
+}

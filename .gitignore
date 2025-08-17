@@ -416,3 +416,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Ocelot Gateway - Local development overrides
+**/ocelot.local.json
+**/appsettings.local.json

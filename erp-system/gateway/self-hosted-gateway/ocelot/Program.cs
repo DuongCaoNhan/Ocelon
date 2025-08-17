@@ -8,8 +8,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add configuration
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+// Add environment-specific configuration
+var environment = builder.Environment.EnvironmentName;
+Console.WriteLine($"Loading configuration for environment: {environment}");
+
+// Load configurations in order: base -> environment-specific -> local overrides
+builder.Configuration.AddJsonFile("ocelot.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile($"ocelot.{environment}.json", optional: false, reloadOnChange: true);
+builder.Configuration.AddJsonFile("ocelot.local.json", optional: true, reloadOnChange: true);
 
 // Add services to the container
 builder.Services.AddControllers();

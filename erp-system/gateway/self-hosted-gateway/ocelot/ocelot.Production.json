@@ -1,0 +1,493 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-service.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "hr-service-backup.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "hr-service-dr.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/hr/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "hr-service",
+      "Key": "hr-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["hr.read", "hr.write", "hr.admin"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 50,
+        "QuotaExceededMessage": "HR Service rate limit exceeded. Please try again later.",
+        "HttpStatusCode": 429
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Production",
+        "X-Service-Name": "HR-Service",
+        "X-Environment": "Production",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}",
+        "X-Client-Version": "{ClientVersion}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles",
+        "X-Tenant-Id": "tenant"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "HR.Employee,HR.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "hr-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 600,
+        "Region": "hr-cache-prod"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "inventory-service.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "inventory-service-backup.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "inventory-service-dr.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/inventory/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "inventory-service",
+      "Key": "inventory-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["inventory.read", "inventory.write", "inventory.admin"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100,
+        "QuotaExceededMessage": "Inventory Service rate limit exceeded. Please try again later.",
+        "HttpStatusCode": 429
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Production",
+        "X-Service-Name": "Inventory-Service",
+        "X-Environment": "Production",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}",
+        "X-Client-Version": "{ClientVersion}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles",
+        "X-Tenant-Id": "tenant"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Inventory.User,Inventory.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "inventory-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 600,
+        "Region": "inventory-cache-prod"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "accounting-service.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "accounting-service-backup.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "accounting-service-dr.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/accounting/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "accounting-service",
+      "Key": "accounting-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["accounting.read", "accounting.write", "accounting.admin"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 75,
+        "QuotaExceededMessage": "Accounting Service rate limit exceeded. Please try again later.",
+        "HttpStatusCode": 429
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Production",
+        "X-Service-Name": "Accounting-Service",
+        "X-Environment": "Production",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}",
+        "X-Client-Version": "{ClientVersion}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles",
+        "X-Tenant-Id": "tenant"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Accounting.User,Accounting.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "accounting-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 600,
+        "Region": "accounting-cache-prod"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "workflow-service.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "workflow-service-backup.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/workflow/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "workflow-service",
+      "Key": "workflow-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["workflow.read", "workflow.write", "workflow.admin"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 100,
+        "QuotaExceededMessage": "Workflow Service rate limit exceeded. Please try again later.",
+        "HttpStatusCode": 429
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Production",
+        "X-Service-Name": "Workflow-Service",
+        "X-Environment": "Production",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}",
+        "X-Client-Version": "{ClientVersion}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles",
+        "X-Tenant-Id": "tenant"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Workflow.User,Workflow.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000,
+        "CircuitBreakerName": "workflow-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 600,
+        "Region": "workflow-cache-prod"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "notification-service.ocelon.com",
+          "Port": 443
+        },
+        {
+          "Host": "notification-service-backup.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/v1/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "SwaggerKey": "notification-service",
+      "Key": "notification-service",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": ["notification.read", "notification.write", "notification.admin"]
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 200,
+        "QuotaExceededMessage": "Notification Service rate limit exceeded. Please try again later.",
+        "HttpStatusCode": 429
+      },
+      "AddHeadersToRequest": {
+        "X-Gateway-Source": "Ocelot-Gateway-Production",
+        "X-Service-Name": "Notification-Service",
+        "X-Environment": "Production",
+        "X-Request-ID": "{RequestId}",
+        "X-Correlation-ID": "{TraceId}",
+        "X-Client-Version": "{ClientVersion}"
+      },
+      "AddClaimsToRequest": {
+        "X-User-Id": "sub",
+        "X-User-Email": "email",
+        "X-User-Roles": "roles",
+        "X-Tenant-Id": "tenant"
+      },
+      "RouteClaimsRequirement": {
+        "roles": "Notification.User,Notification.Manager,Admin"
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 60000,
+        "CircuitBreakerName": "notification-service-breaker"
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 300,
+        "Region": "notification-cache-prod"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-service.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/hr",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "hr-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "inventory-service.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/inventory",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "inventory-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "accounting-service.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/accounting",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "accounting-health"
+    },
+    {
+      "DownstreamPathTemplate": "/actuator/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "workflow-service.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/workflow",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "workflow-health"
+    },
+    {
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "notification-service.ocelon.com",
+          "Port": 443
+        }
+      ],
+      "UpstreamPathTemplate": "/health/notifications",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Key": "notification-health"
+    }
+  ],
+  "Aggregates": [
+    {
+      "RouteKeys": [
+        "hr-health",
+        "inventory-health", 
+        "accounting-health",
+        "workflow-health",
+        "notification-health"
+      ],
+      "UpstreamPathTemplate": "/health/all",
+      "UpstreamHttpMethod": [ "GET" ],
+      "Aggregator": "HealthCheckAggregator"
+    }
+  ],
+  "SwaggerEndPoints": [
+    {
+      "Key": "hr-service",
+      "Config": [
+        {
+          "Name": "HR Service API",
+          "Version": "v1",
+          "Url": "https://hr-service.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "inventory-service",
+      "Config": [
+        {
+          "Name": "Inventory Service API",
+          "Version": "v1",
+          "Url": "https://inventory-service.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "accounting-service",
+      "Config": [
+        {
+          "Name": "Accounting Service API",
+          "Version": "v1",
+          "Url": "https://accounting-service.ocelon.com/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "workflow-service",
+      "Config": [
+        {
+          "Name": "Workflow Service API",
+          "Version": "v1",
+          "Url": "https://workflow-service.ocelon.com/v3/api-docs"
+        }
+      ]
+    },
+    {
+      "Key": "notification-service",
+      "Config": [
+        {
+          "Name": "Notification Service API",
+          "Version": "v1",
+          "Url": "https://notification-service.ocelon.com/api-docs"
+        }
+      ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://api.ocelon.com",
+    "RateLimitOptions": {
+      "QuotaExceededMessage": "API rate limit exceeded. Please contact support if you need higher limits.",
+      "HttpStatusCode": 429,
+      "ClientIdHeader": "X-Client-Id",
+      "DisableRateLimitHeaders": false
+    },
+    "QoSOptions": {
+      "ExceptionsAllowedBeforeBreaking": 3,
+      "DurationOfBreak": 10000,
+      "TimeoutValue": 30000
+    },
+    "LoadBalancerOptions": {
+      "Type": "RoundRobin",
+      "Key": "RemoteAddress",
+      "Expiry": 3600000
+    },
+    "HttpHandlerOptions": {
+      "AllowAutoRedirect": false,
+      "UseCookieContainer": false,
+      "UseTracing": true,
+      "UseProxy": false
+    },
+    "ServiceDiscoveryProvider": {
+      "Type": "Consul",
+      "Host": "consul.ocelon.com",
+      "Port": 8500,
+      "ConfigurationKey": "ocelot-production"
+    },
+    "DownstreamHeaderTransform": {
+      "X-Environment": "Production",
+      "X-Gateway-Version": "1.0.0",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "X-XSS-Protection": "1; mode=block",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Content-Security-Policy": "default-src 'self'"
+    }
+  }
+}

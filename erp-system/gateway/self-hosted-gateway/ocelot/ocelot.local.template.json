@@ -1,0 +1,22 @@
+{
+  "// This file is for local development overrides": "Copy this to ocelot.local.json and modify as needed",
+  "Routes": [
+    {
+      "// Example: Override a specific service endpoint": "Uncomment and modify below",
+      "// DownstreamPathTemplate": "/api/v1/{everything}",
+      "// DownstreamScheme": "http",
+      "// DownstreamHostAndPorts": [
+      "//   {
+      "//     \"Host\": \"localhost\",
+      "//     \"Port\": 5001
+      "//   }
+      "// ],
+      "// UpstreamPathTemplate": "/v1/hr/{everything}",
+      "// Key": "hr-service"
+    }
+  ],
+  "GlobalConfiguration": {
+    "// Example: Override base URL for local testing": "Uncomment below",
+    "// BaseUrl": "http://localhost:5000"
+  }
+}
