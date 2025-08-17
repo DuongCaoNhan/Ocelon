@@ -1,12 +1,17 @@
 # ERP Management System - Microservices Architecture
 
-A comprehensive, cloud-native ERP Management System built with microservices architecture using a polyglot technology stack, designed for scalability, maintainability, and modern cloud deployment.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Environment](https://img.shields.io/badge/environment-development%20%7C%20staging%20%7C%20production-blue)]()
+[![.NET Version](https://img.shields.io/badge/.NET-8.0-purple)]()
+[![Gateway](https://img.shields.io/badge/gateway-ocelot%20%7C%20yarp-orange)]()
+
+A comprehensive, cloud-native ERP Management System built with microservices architecture using a polyglot technology stack, designed for scalability, maintainability, and modern cloud deployment with full environment-specific configuration support.
 
 ## 🏗️ Architecture Overview
 
 This ERP system follows Domain-Driven Design (DDD) principles and microservices architecture patterns with the following key services:
 
-### Core Business Services (.NET 10)
+### Core Business Services (.NET 8)
 - **HR Service** - Employee management, payroll, and human resources
 - **Inventory Service** - Stock management, warehousing, and supply chain
 - **Accounting Service** - Financial management, invoicing, and reporting
@@ -14,11 +19,17 @@ This ERP system follows Domain-Driven Design (DDD) principles and microservices 
 ### Supporting Services
 - **Workflow Service** (Java) - Business process automation and workflow management
 - **Notification Service** (Node.js) - Real-time notifications and communication
+- **Audit Service** (.NET) - System-wide audit logging and compliance tracking
+- **AI Agent Service** (.NET) - AI-powered automation and intelligent assistance
+
+### Gateway Services
+- **Ocelot Gateway** - .NET API Gateway with routing, authentication, and rate limiting
+- **YARP Gateway** - Alternative high-performance reverse proxy gateway
 
 ## 🛠️ Technology Stack
 
 ### Primary Technologies
-- **.NET 10 (C#)** - Core business services with DDD architecture
+- **.NET 8 (C#)** - Core business services with DDD architecture
 - **Java** - Workflow automation services
 - **Node.js** - Real-time notification services
 - **Azure Cloud Platform** - Complete cloud infrastructure
@@ -42,8 +53,16 @@ This ERP system follows Domain-Driven Design (DDD) principles and microservices 
 │   ├── /HRService               # .NET DDD: Domain, Application, Infrastructure, API
 │   ├── /InventoryService        # .NET DDD architecture
 │   ├── /AccountingService       # .NET DDD architecture
+│   ├── /AuditService            # .NET DDD: System audit and compliance
+│   ├── /AIAgentService          # .NET: AI-powered automation
 │   ├── /WorkflowService         # Java service (placeholder)
 │   └── /NotificationService     # Node.js service (placeholder)
+├── /gateway                     # API Gateway services
+│   ├── /self-hosted-gateway     # Self-hosted gateway implementations
+│   │   ├── /ocelot             # Ocelot .NET API Gateway
+│   │   └── /yarp               # YARP .NET Gateway
+│   ├── /api-management         # Azure API Management configurations
+│   └── /infrastructure         # Gateway infrastructure as code
 ├── /tests                       # Comprehensive testing suite
 │   ├── /unit                    # Unit tests per service
 │   ├── /integration             # Integration tests
@@ -72,7 +91,7 @@ This ERP system follows Domain-Driven Design (DDD) principles and microservices 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 10 SDK
+- .NET 8 SDK
 - Docker Desktop
 - Azure CLI
 - kubectl
@@ -86,27 +105,43 @@ This ERP system follows Domain-Driven Design (DDD) principles and microservices 
    cd erp-system
    ```
 
-2. **Start local infrastructure**
+2. **Set up environment configuration**
+   ```bash
+   # Copy environment template
+   cp .env.template .env
+   # Edit .env with your configuration values
+   
+   # Set environment (Development is default)
+   set ASPNETCORE_ENVIRONMENT=Development
+   ```
+
+3. **Start local infrastructure**
    ```bash
    docker-compose up -d
    ```
 
-3. **Run services locally**
+4. **Build and run services**
    ```bash
-   # HR Service
-   cd src/HRService
+   # Build entire solution
+   dotnet build ERP.sln
+   
+   # Run specific services
+   cd src/HRService/HRService.API
    dotnet run
-
-   # Inventory Service
-   cd src/InventoryService
-   dotnet run
-
-   # Accounting Service
-   cd src/AccountingService
+   
+   # Run gateway
+   cd gateway/self-hosted-gateway/ocelot
    dotnet run
    ```
 
-4. **Run tests**
+5. **Access services**
+   - Gateway: `http://localhost:5000`
+   - Gateway Swagger: `http://localhost:5000/swagger`
+   - HR Service: `http://localhost:5001` 
+   - Inventory Service: `http://localhost:5002`
+   - Accounting Service: `http://localhost:5003`
+
+6. **Run tests**
    ```bash
    # Unit tests
    dotnet test tests/unit/
@@ -118,18 +153,83 @@ This ERP system follows Domain-Driven Design (DDD) principles and microservices 
    dotnet test tests/e2e/
    ```
 
-## 🔧 Configuration
+## 🔧 Configuration & Environment Management
 
-### Environment Variables
-- `AZURE_CONNECTION_STRING` - Azure Service Bus connection
-- `AZURE_KEY_VAULT_URL` - Azure Key Vault URL
-- `DATABASE_CONNECTION_STRING` - Database connection string
-- `ASPNETCORE_ENVIRONMENT` - Environment (Development, Staging, Production)
+### Environment-Specific Configurations
+The system supports multiple deployment environments with dedicated configurations:
+
+- **Development** - Local development with debugging enabled
+- **Staging** - Pre-production testing environment  
+- **Production** - Live production environment
+
+### Configuration Files Structure
+```
+├── /gateway/self-hosted-gateway/ocelot/
+│   ├── ocelot.Development.json      # Development gateway config
+│   ├── ocelot.Staging.json          # Staging gateway config
+│   ├── ocelot.Production.json       # Production gateway config
+│   └── ocelot.local.json           # Local overrides (gitignored)
+├── /src/[ServiceName]/[ServiceName].API/
+│   ├── appsettings.json             # Base configuration
+│   ├── appsettings.Development.json # Development overrides
+│   ├── appsettings.Staging.json     # Staging overrides
+│   └── appsettings.Production.json  # Production overrides
+└── .env.template                    # Environment variables template
+```
+
+### Key Environment Differences
+
+| Configuration | Development | Staging | Production |
+|---------------|-------------|---------|------------|
+| **Database** | LocalDB/Local SQL | Azure SQL (Staging) | Azure SQL (Production) |
+| **Logging Level** | Debug | Information | Warning |
+| **JWT Expiry** | 60 minutes | 30 minutes | 15 minutes |
+| **Swagger** | ✅ Enabled | ✅ Enabled | ❌ Disabled |
+| **Rate Limiting** | ❌ Disabled | ✅ Moderate | ✅ Strict |
+| **Caching TTL** | 5 minutes | 15-20 minutes | 30-60 minutes |
+| **HTTPS** | Optional | Required | Required |
+
+### Environment Setup
+1. **Copy environment template:**
+   ```bash
+   cp .env.template .env
+   ```
+
+2. **Set environment variable:**
+   ```bash
+   # Windows
+   set ASPNETCORE_ENVIRONMENT=Development
+   set ASPNETCORE_ENVIRONMENT=Staging
+   set ASPNETCORE_ENVIRONMENT=Production
+   
+   # Linux/macOS
+   export ASPNETCORE_ENVIRONMENT=Development
+   ```
+
+3. **Run with specific environment:**
+   ```bash
+   cd src/HRService/HRService.API
+   dotnet run --environment Production
+   ```
+
+For detailed configuration documentation, see [Environment Configuration Guide](./docs/DOTNET-ENVIRONMENT-CONFIG.md).
 
 ### Service Endpoints
-- HR Service: `https://api.erp-system.com/v1/hr`
-- Inventory Service: `https://api.erp-system.com/v1/inventory`
-- Accounting Service: `https://api.erp-system.com/v1/accounting`
+
+| Service | Development | Staging | Production |
+|---------|-------------|---------|------------|
+| **Gateway** | `http://localhost:5000` | `https://api-staging.ocelon.com` | `https://api.ocelon.com` |
+| **HR Service** | `http://localhost:5001` | `https://hr-service-staging.ocelon.com` | `https://hr-service.ocelon.com` |
+| **Inventory Service** | `http://localhost:5002` | `https://inventory-service-staging.ocelon.com` | `https://inventory-service.ocelon.com` |
+| **Accounting Service** | `http://localhost:5003` | `https://accounting-service-staging.ocelon.com` | `https://accounting-service.ocelon.com` |
+| **Audit Service** | `http://localhost:5004` | `https://audit-service-staging.ocelon.com` | `https://audit-service.ocelon.com` |
+| **AI Agent Service** | `http://localhost:5005` | `https://ai-service-staging.ocelon.com` | `https://ai-service.ocelon.com` |
+
+### Gateway Routes
+- HR API: `/v1/hr/*` → HR Service
+- Inventory API: `/v1/inventory/*` → Inventory Service  
+- Accounting API: `/v1/accounting/*` → Accounting Service
+- Health Checks: `/health/all` → Aggregated health status
 
 ## 🔐 Security
 
@@ -161,9 +261,15 @@ helm install erp-system ./infrastructure/helm/erp-system
 ## 📚 Documentation
 
 - [Architecture Documentation](./docs/architecture.md)
+- [Environment Configuration Guide](./docs/DOTNET-ENVIRONMENT-CONFIG.md)
 - [API Specifications](./docs/api-specs/)
-- [Decision Records](./docs/decision-records/)
+- [Gateway Configuration](./gateway/self-hosted-gateway/ocelot/README-Environment-Config.md)
 - [Service READMEs](./src/)
+
+### Configuration Files
+- [Environment Variables Template](./.env.template)
+- [Ocelot Gateway Configs](./gateway/self-hosted-gateway/ocelot/)
+- [Service-specific Configs](./src/)
 
 ## 🤝 Contributing
 
@@ -177,9 +283,38 @@ helm install erp-system ./infrastructure/helm/erp-system
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 Support & Troubleshooting
 
+### Common Environment Configuration Issues
+
+#### Configuration Not Loading
+```bash
+# Check environment variable
+echo $ASPNETCORE_ENVIRONMENT  # Linux/macOS
+echo %ASPNETCORE_ENVIRONMENT%  # Windows
+
+# Verify configuration files exist
+ls src/HRService/HRService.API/appsettings.*.json
+ls gateway/self-hosted-gateway/ocelot/ocelot.*.json
+```
+
+#### Service Connection Issues
+```bash
+# Test service health
+curl http://localhost:5001/health  # HR Service
+curl http://localhost:5002/health  # Inventory Service
+curl http://localhost:5000/health/all  # Gateway health aggregate
+```
+
+#### Database Connection Problems
+- Verify connection strings in `appsettings.{Environment}.json`
+- Check database server accessibility
+- Validate credentials and permissions
+
+For detailed troubleshooting, see [Environment Configuration Guide](./docs/DOTNET-ENVIRONMENT-CONFIG.md#troubleshooting)
+
+### Support Channels
 For support and questions:
 - Create an issue in the repository
 - Check the [documentation](./docs/)
-- Review [decision records](./docs/decision-records/)
+- Review environment-specific configurations
