@@ -8,8 +8,26 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Azure Key Vault if not in development
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUrl = builder.Configuration["Azure:KeyVault:VaultUrl"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl), 
+            new DefaultAzureCredential(),
+            new AzureKeyVaultConfigurationOptions
+            {
+                ReloadInterval = TimeSpan.FromMinutes(30)
+            });
+    }
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -91,6 +109,9 @@ builder.Services.AddAutoMapper(typeof(HRService.Application.Mappings.EmployeeMap
 builder.Services.AddScoped<HRService.Domain.Repositories.IEmployeeRepository, HRService.Infrastructure.Repositories.EmployeeRepository>();
 
 // Configure JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"] 
+    ?? throw new InvalidOperationException("JWT Key not configured");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -102,8 +123,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured")))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
