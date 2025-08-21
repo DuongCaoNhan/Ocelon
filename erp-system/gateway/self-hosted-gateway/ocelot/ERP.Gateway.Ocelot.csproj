@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ERP.Gateway.Ocelot</AssemblyName>
     <RootNamespace>ERP.Gateway.Ocelot</RootNamespace>
+    <UserSecretsId>ERP-Gateway-Ocelot</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,8 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.0" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
   </ItemGroup>
 
   <ItemGroup>

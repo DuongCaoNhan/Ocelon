@@ -9,10 +9,28 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 
 [assembly: InternalsVisibleTo("AuditService.IntegrationTests")]
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Azure Key Vault if not in development
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUrl = builder.Configuration["Azure:KeyVault:VaultUrl"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl), 
+            new DefaultAzureCredential(),
+            new AzureKeyVaultConfigurationOptions
+            {
+                ReloadInterval = TimeSpan.FromMinutes(30)
+            });
+    }
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()

@@ -5,6 +5,8 @@ using Ocelot.Middleware;
 using Ocelot.Provider.Consul;
 using Ocelot.Provider.Polly;
 using System.Text;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,22 @@ Console.WriteLine($"Loading configuration for environment: {environment}");
 builder.Configuration.AddJsonFile("ocelot.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddJsonFile($"ocelot.{environment}.json", optional: false, reloadOnChange: true);
 builder.Configuration.AddJsonFile("ocelot.local.json", optional: true, reloadOnChange: true);
+
+// Configure Azure Key Vault if not in development
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUrl = builder.Configuration["Azure:KeyVault:VaultUrl"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl), 
+            new DefaultAzureCredential(),
+            new AzureKeyVaultConfigurationOptions
+            {
+                ReloadInterval = TimeSpan.FromMinutes(30)
+            });
+    }
+}
 
 // Add services to the container
 builder.Services.AddControllers();

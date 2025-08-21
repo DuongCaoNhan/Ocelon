@@ -18,8 +18,25 @@ using Serilog;
 using MediatR;
 using Polly;
 using Polly.Extensions.Http;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Azure Key Vault if not in development
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUrl = builder.Configuration["Azure:KeyVault:VaultUrl"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl), 
+            new DefaultAzureCredential(),
+            new AzureKeyVaultConfigurationOptions
+            {
+                ReloadInterval = TimeSpan.FromMinutes(30)
+            });
+    }
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()

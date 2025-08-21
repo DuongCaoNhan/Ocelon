@@ -25,7 +25,9 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         var jwtSettings = configuration.GetSection("Authentication:Jwt");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is required");
+        var secretKey = jwtSettings["SecretKey"] 
+            ?? configuration.GetValueWithKeyVault("Authentication:Jwt:SecretKey")
+            ?? throw new InvalidOperationException("JWT SecretKey is required");
         var issuer = jwtSettings["Issuer"] ?? "ocelon-erp";
         var audience = jwtSettings["Audience"] ?? "ocelon-erp-api";
 
